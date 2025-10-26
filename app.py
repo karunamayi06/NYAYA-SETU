@@ -215,7 +215,7 @@ ensure_mcp_tools_registered()
 # ==========================================================
 try:
     if hasattr(mcp, "tools"):
-        print(f"✅ MCP initialized with {len(mcp.tools)} tools: {list(mcp.tools.keys())}")
+        print(f"✅ MCP initialized with tools")
     else:
         raise AttributeError("FastMCP.tools not created yet — forcing registration.")
 except Exception as e:
