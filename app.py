@@ -242,8 +242,20 @@ async def run_mcp_tool(tool_name: str, **payload):
 
 # ==========================================================
 # 💬 Streamlit UI (Simplified — No FastAPI / No free_port)
+# ==========================================================# ==========================================================
+# ⚖ Nyaya Setu — Unified Streamlit + MCP App (HF Ready)
 # ==========================================================
-st.set_page_config(page_title="⚖️ Nyaya Setu", layout="wide")
+
+import os, json, asyncio, traceback, time, threading, requests, socket
+import nest_asyncio, streamlit as st
+
+# 🚀 Set app metadata early (important for PWA name on phones)
+st.set_page_config(
+    page_title="Nyaya Setu – Legal Assistant",
+    page_icon="⚖️",
+    layout="wide"
+)
+
 st.title("⚖️ Nyaya Setu")
 
 with st.sidebar:
@@ -267,14 +279,67 @@ if not GROQ_API_KEY:
 # ⚖️ Core Logic
 # ==========================================================
 RAG_SOURCES = {
-    "RTI": ["https://rti.gov.in", "https://cic.gov.in"],
-    "Divorce": ["https://districts.ecourts.gov.in", "https://indiacode.nic.in", "https://nalsa.gov.in"],
-    "Consumer": ["https://consumerhelpline.gov.in", "https://edaakhil.nic.in"],
-    "Property": ["https://bhulekh.gov.in", "https://igrmaharashtra.gov.in"],
-    "Workplace": ["https://labour.gov.in", "https://epfindia.gov.in"],
-    "Family": ["https://ncw.nic.in", "https://ncpcr.gov.in"],
-    "Cybercrime": ["https://cybercrime.gov.in", "https://mha.gov.in"],
-    "Verdict Lookup": ["https://indiankanoon.org", "https://legislative.gov.in", "https://nalsa.gov.in"]
+    "RTI": [
+        "https://rti.gov.in",                 # Central RTI information portal
+        "https://cic.gov.in",                 # Central Information Commission decisions
+        "https://pgportal.gov.in"             # Online grievance redressal under RTI & others
+    ],
+
+    "Divorce": [
+        "https://districts.ecourts.gov.in",   # Case filing & cause list
+        "https://indiacode.nic.in",           # Statutory texts (HMA 1955, SMA 1954, etc.)
+        "https://nalsa.gov.in",               # Legal aid & family dispute mediation
+        "https://legalserviceindia.com"       # For case law summaries (secondary)
+    ],
+
+    "Consumer": [
+        "https://consumerhelpline.gov.in",    # National consumer helpline
+        "https://edaakhil.nic.in",            # Online complaint filing
+        "https://ncdrc.nic.in"                # National Commission for redressal orders
+    ],
+
+    "Property": [
+        "https://bhulekh.gov.in",             # Land records (generic portal)
+        "https://igrmaharashtra.gov.in",      # State-specific property registration
+        "https://dharani.telangana.gov.in",   # Modern state-level property records
+        "https://revenue.gov.in"              # Central revenue department for property-related rules
+    ],
+
+    "Workplace": [
+        "https://labour.gov.in",              # Ministry of Labour & Employment
+        "https://epfindia.gov.in",            # Provident Fund & benefits
+        "https://esic.gov.in",                # Employee State Insurance Corporation
+        "https://poshforum.in"                # POSH Act awareness & local committee info
+    ],
+
+    "Family": [
+        "https://ncw.nic.in",                 # National Commission for Women
+        "https://ncpcr.gov.in",               # Child Rights Commission
+        "https://wcd.nic.in",                 # Ministry of Women & Child Development
+        "https://sci.gov.in"                  # Supreme Court (family law judgments)
+    ],
+
+    "Cybercrime": [
+        "https://cybercrime.gov.in",          # National Cybercrime Reporting Portal
+        "https://mha.gov.in",                 # Ministry of Home Affairs (BNS/BNSS updates)
+        "https://cert-in.org.in",             # Indian Computer Emergency Response Team (incident handling)
+        "https://cyberpeace.org"              # NGO partner recognized for awareness & training
+    ],
+
+    "Verdict Lookup": [
+        "https://indiankanoon.org",           # Searchable case law database
+        "https://legislative.gov.in",         # Gazette of India – acts & amendments
+        "https://nalsa.gov.in",               # Legal services verdicts
+        "https://main.sci.gov.in",            # Official Supreme Court judgments
+        "https://highcourtchd.gov.in"         # Example state high court judgments (add others similarly)
+    ],
+
+    "Domestic Violence": [
+        "https://ncw.nic.in",                 # Complaint & guidance under PWDVA
+        "https://nalsa.gov.in",               # Legal aid for domestic violence survivors
+        "https://wcd.nic.in",                 # Schemes & helplines
+        "https://indiacode.nic.in"            # Acts: PWDVA 2005, IPC/BNSS sections
+    ]
 }
 
 for key, default in {
